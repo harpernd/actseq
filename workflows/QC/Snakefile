@@ -1,0 +1,23 @@
+configfile:"config/config.yaml"
+
+rule all:
+  input:
+    "multiqc_report.html"
+    
+rule fastqc_1_file:
+  input:
+    "{sample}.fastq.gz"
+  output:
+    "{sample}_fastqc.html",
+    "{sample}_fastqc.zip"
+  shell:
+    "fastqc {input}"
+    
+rule run_multiqc:
+  input:
+    fastqc_output=expand("{sample}_fastqc.html", sample=config["samples"]) 
+  output:
+    "multiqc_report.html",
+    directory("multiqc_data")
+  shell:
+    "multiqc {config[targetDir]}"

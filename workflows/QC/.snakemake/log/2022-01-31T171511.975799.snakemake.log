@@ -1,0 +1,4 @@
+Building DAG of jobs...
+MissingInputException in line 7 of /Users/zonggaoshi/Documents/SandboxforFun/PrepOne/workflows/QC/Snakefile:
+Missing input files for rule fastqc_1_file:
+Cellline1.fastq.gz

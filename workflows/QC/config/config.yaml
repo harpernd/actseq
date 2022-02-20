@@ -1,0 +1,7 @@
+samples: 
+    - data/HD827
+    - data/OVCAR5
+    - data/HCC1806
+targetDir:
+    - data
+

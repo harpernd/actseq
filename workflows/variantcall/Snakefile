@@ -1,0 +1,126 @@
+configfile: "config.yaml"
+
+rule all:
+     input:
+       "mapped/HD827.mutect2.vcf",
+       "mapped/HD827.insert_size_metrics.txt",
+       "mapped/HD827.Hsmetrics.txt"
+
+rule Mapping:
+     input:
+        genome="data/genome/hg19/ucsc.hg19.fasta",
+        fq1="data/samples/HD827_R1.fastq.gz",
+        fq2="data/samples/HD827_R2.fastq.gz"
+     output:
+        temp("mapped/{sample}.bam")
+     shell:
+        "bwa mem -t 16 {input.genome}"
+        "{input.fq1}"
+        "{input.fq2}"
+        "samtools view -Sb - > {output}"
+
+rule SortingIndexing:
+     input:
+         "mapped/{sample}.bam"
+     output:
+         temp("mapped/{sample}.sorted.bam")
+     shell:
+         "samtools sort -o {output} {input}"
+
+rule MarkDuplicates:
+     input:
+         "mapped/{sample}.sorted.bam"
+     output:
+         temp("mapped/{sample}.sorted.markdup.bam")
+     shell:
+         "gatk4 --java-options '-Xmx16G' MarkDuplicates"
+         "-I {input}"
+         "-O {output}"
+
+rule AddOrReplaceReadGroups:
+     input:
+         "mapped/{sample}.sorted.markdup.bam"
+     output:
+         temp("mapped/{sample}.sorted.markdup_AG.bam")
+     shell:
+         "gatk4 --java-options '-Xmx16G' AddOrReplaceReadGroups"
+         "-I {input}"
+         "-O {output}"
+         "-RGID {sample}"
+         "-RGLB {sample}"
+         "-RGPL illumina"
+         "-RGPU Patients"
+         "-RGSM {sample}"
+
+rule BaseRecalibrator:
+     input:
+         genome="data/genome/hg19/ucsc.hg19.fasta",
+         bam="mapped/{sample}.sorted.markdup_AG.bam",
+         knownsites="data/genome//dbsnp_138.hg19.vcf"
+     output:
+         temp("mapped/{sample}.sorted.markdup_AG_hg19.bam_recal_table")
+     shell:
+         "gatk4 --java-options '-Xmx16G' BaseRecalibrator"
+         "-I {input}"
+         "-O {output}"
+         "-R {input.genome}"
+         "--known-sites {input.knownsites}"
+
+rule ApplyBQSR:
+     input:
+       genome="data/genome/hg19/ucsc.hg19.fasta",
+       bam="mapped/{sample}.sorted.markdup_AG.bam",
+       recal_table="mapped/{sample}.sorted.markdup_AG_bam_recal_table"
+     output:
+       protected("mappped/{sample}.sorted.markdup_AG_recal_hg19.bam")
+     shell:
+       "gatk4 --java-options '-Xmx16G' ApplyBQSR"
+       "-I {input.bam}"
+       "-O {output}"
+       "--bqsr-recal-file {input.recal_table}"
+       "-R {input.genome}"
+
+rule InsertSize:
+     input:
+        "mapped/{sample}.sorted.markdup_AG_recal_hg19.bam"
+     output:
+        txt="mapped/{sample}.insert_size_metrics.txt",
+        pdf="mapped/{sample}.insert_size_histogram.pdf"
+     shell:
+        ""
+        "gatk4 --java-options '-Xmx16G' CollectInsertSizeMetrics"
+        "-I {input}"
+        "-O {output.txt}"
+        "-H {output.pdf}"
+        "-M 0.5"
+
+rule CollectHsMetrics:
+     input:
+         genome="data/genome/hg19/ucsc.hg19.fasta",
+         bam="mapped/{sample}.sorted.markdup_AG_recal_hg19.bam",
+         TI="data/beds/ActSeqTargets.bed.interval_list",
+         BI="data/beds/ActSeqBaits.bed.interval_list"
+     output:
+         "mapped/{sample}.Hsmetrics.txt"
+     shell:
+         "gatk4 --java-options '-Xmx16G' CollectHsMetrics"
+         "-I {input.bam}"
+         "-O {output}"
+         "-R {input.genome}"
+         "-BI {input.BI}"
+         "-TI {input.TI}"
+
+rule Mutect2call:
+     input:
+         genome="data/genome/hg19/ucsc.hg19.fasta",
+         bam="mapped/{sample}.sorted.markdup_AG_recal_hg19.bam",
+         TI="data/beds/ActSeqTargets.bed.interval_list"
+     output:
+         "mapped/{sample}.mutect2.vcf"
+     shell:
+         "gatk4 --java-options '-Xmx32G' Mutect2 "
+         "-R {input.genome} "
+         "-L {input.TI}"
+         "-I {input.bam}"
+         "-O {output}"
+         "-tumor {wildcards.sample}"
