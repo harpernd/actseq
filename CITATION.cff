@@ -1,0 +1,30 @@
+cff-version: 1.2.0
+message: "If you use these workflows, please cite it as below."
+preferred-citation:
+  type: article
+  authors:
+  - family-names: "Shi"
+    given-names: "Zonggao"
+  - family-names: "Lopez"
+    given-names: "Jacqueline"
+  - family-names: "Kalliney"
+    given-names: "William"
+  - family-names: "Sutton"
+    given-names: "Bobbie"
+  - family-names: "Simpson"
+    given-names: "Joyce"
+  - family-names: "Liu"
+    given-names: "Sheng"
+  - family-names: "Wan"
+    given-names: "Jun"
+  - family-names: "Stack"
+    given-names: "Sharon"
+  doi: "10.0000/00000" # to be updated
+  journal: "PLOS ONE"
+  month: 0 #to be decideed
+  start: 00 # First page number to be updated
+  end:  100 # Last page number to be updated
+  title: "Development and evaluation of ActSeq: a targeted next-generation sequencing panel for clinical oncology use"
+  issue: 00 # to be updated
+  volume: 00 # to be updated
+  year: 2022
